@@ -1,0 +1,71 @@
+{
+  "version": "4.7.1",
+  "architecture": "Independent feed-forward actor and critic; 58 inputs, no LSTM",
+  "inputs": {
+    "globals": [
+      "asinh(pot/100)/4",
+      "rounds/10-1",
+      "remainingRounds/20",
+      "(players-3)/5",
+      "(activePlayers-1)/(players-1)",
+      "asinh(dangerRolls)/4",
+      "asinh(highestRivalScoreMinusOwn/150)/4",
+      "strictLeadReachLower",
+      "strictLeadReachUpper",
+      "exactNextDangerRollStrictLeadProbability",
+      "safePhasePot/210, -1 if unknown",
+      "anyOpponentBanked",
+      "catchUpAfterBankLower",
+      "catchUpAfterBankUpper"
+    ],
+    "opponentSlots": 11,
+    "perOpponent": [
+      "asinh(scoreMinusOwn/150)/4",
+      "status: active1, banked0, absent-1",
+      "(observedContinues+1)/(observedContinues+observedBanks+2)",
+      "observationCount/(observationCount+8)"
+    ],
+    "total": 58,
+    "history": "Public choices within this game only. Count each decision to roll once, including before a bust. No inferred banking time. Counters follow player identity through rank sorting. Reset at new game."
+  },
+  "sizes": {
+    "Small": {
+      "hidden": 16,
+      "parameters": 1922,
+      "default": true
+    },
+    "Normal": {
+      "hidden": 32,
+      "parameters": 3842
+    },
+    "Large": {
+      "hidden": 128,
+      "parameters": 15362
+    }
+  },
+  "probabilities": {
+    "featureExactTargetLimit": 16384,
+    "cacheTables": 32,
+    "largeTargets": "Existing rigorous lower and upper bounds. Both returned to network; not silently presented as exact.",
+    "meaning": "Probability that pot reaches a fixed strict-lead target before bust, not probability of winning.",
+    "opponentPolicies": "Original exact/bounded probability functions and two-roll search unchanged.",
+    "catchUp": "min over active opponents of ownScore+pot-opponentScore, with equality counting as a catch. Use one shared-pot hitting probability: exact through16384, lower/upper beyond. No active opponent returns0; already reachable returns1. Not a probability of losing or a forecast of opponent actions."
+  },
+  "training": {
+    "games": 432,
+    "optimizer": "Unchanged constant-rate Adam beta1 .9 beta2 .999 epsilon1e-8; no decay, warmup, gradient clipping or KL stop/rollback guard",
+    "epochs": 2,
+    "optimizerPositions": 1728,
+    "microbatch": 288,
+    "syntheticStarts": "10%, no invented history; safe-phase starting pot marked unknown",
+    "memory": "Feed-forward public history summaries; no recurrent state or sequence training"
+  },
+  "benchmarks": {
+    "scripts": "bankbench-46, unchanged fixtures and opponent behavior; older checkpoints imported as comparison references",
+    "challenge": "bankbench-challenge-6, same equal regular mix, one follower every12 games, max two/type and max one follower",
+    "retention": "Existing paired/fresh best-model validation, no automatic training rewinds"
+  },
+  "compatibility": "56-input compact checkpoints upgrade automatically, zero-inserting both feature weights and Adam moments in actor/critic input layers. Preserve all prior outputs, counters, optimizer step, champions and reports. Old save slots untouched. Earlier88-input models remain comparison references.",
+  "runtime": "Offline JS Float32 Web Workers, 2\u201312 players, 10/15/20 rounds",
+  "claims": "Functional validation only. No evidence yet that compact inputs improve playing strength."
+}
